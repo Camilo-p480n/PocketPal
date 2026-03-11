@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NOVA Finance — Agente IA</title>
+    <link rel="stylesheet" href="/frontend/css/style.css" />
+</head>
+
+<body>
+    <div class="app-shell">
+
+        <!-- ── Sidebar ─────────────────────────────────────────────────────────── -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-mark">N</div>
+                <div>
+                    <div class="logo-text">NOVA</div>
+                </div>
+                <span class="logo-tag">Finance</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section-label">Principal</div>
+                <a class="nav-item" href="/dashboard.html">
+                    <span class="nav-icon">◈</span> Dashboard
+                </a>
+                <a class="nav-item active" href="/ai.html">
+                    <span class="nav-icon">✦</span> Agente NOVA
+                </a>
+
+                <div class="nav-section-label">Qué puedo hacer</div>
+                <div style="padding:0 8px">
+                    <div
+                        style="background:var(--bg3);border-radius:10px;padding:14px;font-size:12px;color:var(--text2);line-height:1.8">
+                        📝 Registrar transacciones<br />
+                        📊 Consultar estadísticas<br />
+                        📋 Ver mis movimientos<br />
+                        🎯 Estado de mis metas<br />
+                        💡 Consejos financieros
+                    </div>
+                </div>
+
+                <div class="nav-section-label" style="margin-top:20px">Acciones</div>
+                <div class="nav-item" onclick="clearHistory()">
+                    <span class="nav-icon">⊘</span> Borrar historial
+                </div>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="sidebar-user-info">
+                    <div class="user-avatar" id="user-avatar">?</div>
+                    <div style="overflow:hidden">
+                        <div class="user-name" id="user-name">—</div>
+                        <div class="user-email" id="user-email">—</div>
+                    </div>
+                </div>
+                <button class="btn btn-ghost btn-full" style="margin-top:8px;font-size:12px" onclick="auth.logout()">
+                    Cerrar sesión
+                </button>
+            </div>
+        </aside>
+
+        <!-- ── Header ──────────────────────────────────────────────────────────── -->
+        <header class="app-header">
+            <div class="header-title">Agente NOVA</div>
+            <div class="header-actions">
+                <a href="/dashboard.html" class="btn btn-secondary btn-sm">← Dashboard</a>
+            </div>
+        </header>
+
+        <!-- ── Chat area ────────────────────────────────────────────────────────── -->
+        <main class="app-content" style="display:flex;flex-direction:column;padding:0">
+            <div class="chat-layout"
+                style="height:calc(100vh - 64px);padding:24px;max-width:860px;width:100%;margin:0 auto">
+
+                <!-- NOVA header -->
+                <div class="nova-header" style="flex-shrink:0">
+                    <div class="nova-avatar">✦</div>
+                    <div>
+                        <div class="nova-name">NOVA</div>
+                        <div class="nova-status">En línea · Asistente financiero IA</div>
+                    </div>
+                </div>
+
+                <!-- Messages -->
+                <div class="chat-messages" id="chat-messages">
+                    <!-- Welcome message -->
+                    <div class="chat-bubble assistant">
+                        ¡Hola! Soy <strong>NOVA</strong>, tu asistente financiero personal. 🤖<br /><br />
+                        Puedo ayudarte a:
+                        <ul style="margin:8px 0 0 18px;color:inherit;line-height:1.9">
+                            <li>Registrar ingresos y gastos con solo describirlos</li>
+                            <li>Consultar tus estadísticas del mes, semana o año</li>
+                            <li>Ver tus últimas transacciones</li>
+                            <li>Revisar el progreso de tus metas de ahorro</li>
+                            <li>Darte consejos basados en tus finanzas reales</li>
+                        </ul>
+                        <br />¿Con qué empezamos?
+                        <span class="bubble-time" id="welcome-time"></span>
+                    </div>
+                </div>
+
+                <!-- Input area -->
+                <div class="chat-input-area" style="flex-shrink:0">
+                    <div class="chat-quick-actions">
+                        <div class="quick-action" onclick="sendQuick('¿Cuánto gasté este mes?')">📊 Gasto del mes</div>
+                        <div class="quick-action" onclick="sendQuick('Muéstrame mis últimas transacciones')">📋 Últimas
+                            transacciones</div>
+                        <div class="quick-action" onclick="sendQuick('¿Cómo van mis metas de ahorro?')">🎯 Mis metas
+                        </div>
+                        <div class="quick-action" onclick="sendQuick('Dame un resumen de mis finanzas de este año')">📈
+                            Resumen anual</div>
+                        <div class="quick-action" onclick="sendQuick('Gasté 50000 en alimentación hoy')">+ Registrar
+                            gasto</div>
+                    </div>
+                    <div class="chat-input-row">
+                        <textarea id="chat-input"
+                            placeholder="Escribe un mensaje... ej: &quot;Gasté $80,000 en el supermercado&quot; o &quot;¿Cuánto gané este mes?&quot;"
+                            rows="1" onkeydown="handleInputKey(event)" oninput="autoResize(this)"></textarea>
+                        <button class="chat-send-btn" id="send-btn" onclick="sendMessage()" title="Enviar">
+                            ↑
+                        </button>
+                    </div>
+                    <div style="font-size:11px;color:var(--text3);text-align:center">
+                        NOVA usa inteligencia artificial para entender tu lenguaje natural
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="/frontend/js/api.js"></script>
+    <script>
+        if (!requireAuth()) throw new Error('Not logged in');
+
+        const user = getUser();
+        if (user) {
+            document.getElementById('user-name').textContent = user.name;
+            document.getElementById('user-email').textContent = user.email;
+            document.getElementById('user-avatar').textContent = user.name.charAt(0).toUpperCase();
+        }
+
+        document.getElementById('welcome-time').textContent = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+
+        // Conversation history for context
+        let conversationHistory = [];
+        let isTyping = false;
+
+        // Load previous history on start
+        (async () => {
+            try {
+                const res = await ai.history();
+                if (res.data.history.length > 0) {
+                    // Show last 20 messages
+                    const recent = res.data.history.slice(-20);
+                    recent.forEach(msg => {
+                        addBubble(msg.role, msg.content, new Date(msg.created_at));
+                        conversationHistory.push({ role: msg.role, content: msg.content });
+                    });
+                    scrollToBottom();
+                }
+            } catch (_) { }
+        })();
+
+        function handleInputKey(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function autoResize(el) {
+            el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+        }
+
+        function sendQuick(text) {
+            document.getElementById('chat-input').value = text;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message || isTyping) return;
+
+            // Add user bubble
+            addBubble('user', message);
+            input.value = '';
+            input.style.height = 'auto';
+            conversationHistory.push({ role: 'user', content: message });
+
+            // Show typing indicator
+            isTyping = true;
+            const typingEl = showTyping();
+            document.getElementById('send-btn').disabled = true;
+
+            try {
+                const res = await ai.chat(message, conversationHistory.slice(-8));
+                typingEl.remove();
+
+                const reply = res.data.message;
+                conversationHistory.push({ role: 'assistant', content: reply });
+
+                addBubble('assistant', reply, new Date(res.data.timestamp), res.data.actionResult);
+            } catch (err) {
+                typingEl.remove();
+                addBubble('assistant', '⚠️ Ocurrió un error al conectar con NOVA. Por favor intenta de nuevo.');
+                toast.error(err.message);
+            } finally {
+                isTyping = false;
+                document.getElementById('send-btn').disabled = false;
+                scrollToBottom();
+            }
+        }
+
+        function addBubble(role, content, time, actionResult) {
+            const container = document.getElementById('chat-messages');
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble ${role}`;
+
+            // Convert markdown-lite: **bold**, newlines
+            const formatted = content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br/>');
+
+            let extra = '';
+
+            // If there's an action result, show a data card
+            if (actionResult && actionResult.success) {
+                if (actionResult.actionType === 'TRANSACTION_CREATED') {
+                    const tx = actionResult.transaction;
+                    extra = `
+          <div class="chat-action-card">
+            <div class="action-type">✓ Transacción registrada</div>
+            <span class="${tx.type === 'income' ? 'amount-income' : 'amount-expense'}">
+              ${tx.type === 'income' ? '+' : '-'}${fmt.currency(tx.amount)}
+            </span>
+            &nbsp;·&nbsp; ${tx.category} &nbsp;·&nbsp; ${tx.date}
+            ${tx.description ? `<br/><span style="color:var(--text2);font-size:11px">${tx.description}</span>` : ''}
+          </div>`;
+                } else if (actionResult.actionType === 'STATS_RESULT') {
+                    const s = actionResult.stats;
+                    extra = `
+          <div class="chat-action-card">
+            <div class="action-type">📊 Estadísticas — ${actionResult.period}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+              <div><span style="color:var(--green)">${fmt.currency(s.total_income)}</span><br/><span style="font-size:10px;color:var(--text3)">Ingresos</span></div>
+              <div><span style="color:var(--red)">${fmt.currency(s.total_expenses)}</span><br/><span style="font-size:10px;color:var(--text3)">Gastos</span></div>
+              <div style="grid-column:span 2"><span style="color:var(--blue)">${fmt.currency(s.net)}</span><br/><span style="font-size:10px;color:var(--text3)">Balance neto · ${s.total_transactions} transacciones</span></div>
+            </div>
+          </div>`;
+                } else if (actionResult.actionType === 'TRANSACTIONS_LIST') {
+                    const txs = actionResult.transactions;
+                    extra = `
+          <div class="chat-action-card">
+            <div class="action-type">📋 Últimas transacciones</div>
+            ${txs.map(t => `
+              <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px">
+                <span>${t.category} · ${t.date}</span>
+                <span class="${t.type === 'income' ? 'amount-income' : 'amount-expense'}">${t.type === 'income' ? '+' : '-'}${fmt.currency(t.amount)}</span>
+              </div>`).join('')}
+          </div>`;
+                } else if (actionResult.actionType === 'GOALS_STATUS') {
+                    const gs = actionResult.goals;
+                    extra = `
+          <div class="chat-action-card">
+            <div class="action-type">🎯 Metas de ahorro</div>
+            ${gs.map(g => `
+              <div style="padding:6px 0;border-bottom:1px solid var(--border)">
+                <div style="display:flex;justify-content:space-between;font-size:12px">
+                  <span>${g.title} ${g.is_completed ? '✓' : ''}</span>
+                  <span style="color:var(--green)">${g.pct}%</span>
+                </div>
+                <div style="height:4px;background:var(--bg);border-radius:99px;margin-top:4px;overflow:hidden">
+                  <div style="height:100%;width:${Math.min(g.pct, 100)}%;background:linear-gradient(90deg,var(--green),var(--blue));border-radius:99px"></div>
+                </div>
+              </div>`).join('')}
+          </div>`;
+                }
+            }
+
+            bubble.innerHTML = `${formatted}${extra}<span class="bubble-time">${(time || new Date()).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}</span>`;
+            container.appendChild(bubble);
+            scrollToBottom();
+        }
+
+        function showTyping() {
+            const container = document.getElementById('chat-messages');
+            const el = document.createElement('div');
+            el.className = 'typing-indicator';
+            el.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            container.appendChild(el);
+            scrollToBottom();
+            return el;
+        }
+
+        function scrollToBottom() {
+            const c = document.getElementById('chat-messages');
+            c.scrollTop = c.scrollHeight;
+        }
+
+        async function clearHistory() {
+            if (!confirm('¿Borrar todo el historial de conversación?')) return;
+            try {
+                await ai.clearHistory();
+                conversationHistory = [];
+                const container = document.getElementById('chat-messages');
+                container.innerHTML = `
+        <div class="chat-bubble assistant">
+          Historial borrado. ¿En qué te puedo ayudar? ✦
+          <span class="bubble-time">${new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>`;
+                toast.success('Historial borrado');
+            } catch (err) {
+                toast.error(err.message);
+            }
+        }
+    </script>
+</body>
+
+</html>

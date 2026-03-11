@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PocketPall — POKI</title>
+  <link rel="stylesheet" href="./css/style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="./js/config.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+
+<body class="bg-bg text-[#e8eaf0]">
+<div class="flex h-screen w-screen overflow-hidden">
+
+  <!-- ══════════ SIDEBAR ══════════ -->
+  <aside id="sidebar" class="w-[240px] flex-shrink-0 flex flex-col h-full bg-bg2 border-r border-white/[.05]" style="overflow:hidden">
+
+    <!-- Header expandido -->
+    <div id="sidebar-header-open" class="flex items-center h-16 border-b border-white/[.05] flex-shrink-0 px-4 gap-2.5">
+      <div class="w-8 h-8 rounded-[8px] bg-[#8b00ff] flex items-center justify-center font-bold text-sm text-white flex-shrink-0"
+           style="box-shadow:0 4px 14px rgba(139,0,255,.45)">N</div>
+      <div class="flex items-center gap-2 flex-1 min-w-0 logo-text-wrap">
+        <span class="font-bold text-[15px] tracking-tight whitespace-nowrap">PocketPall</span>
+        <span class="text-[10px] font-semibold px-2 py-[2px] rounded-full bg-[rgba(139,0,255,.15)] text-[#a855f7] border border-[rgba(139,0,255,.25)] whitespace-nowrap">Finance</span>
+      </div>
+      <button onclick="toggleSidebar()"
+        class="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[#555e78] hover:bg-white/[.06] hover:text-[#e8eaf0] transition-all">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+    </div>
+    <!-- Header colapsado -->
+    <div id="sidebar-header-closed" class="hidden h-16 border-b border-white/[.05] flex-shrink-0 flex items-center justify-center">
+      <button onclick="toggleSidebar()"
+        class="w-9 h-9 rounded-xl flex items-center justify-center text-[#8b92a8] hover:bg-[rgba(139,0,255,.12)] hover:text-[#a855f7] transition-all">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-2 py-4 flex flex-col gap-0.5 overflow-y-auto overflow-x-hidden">
+      <p class="nav-section-sep text-[10px] font-semibold uppercase tracking-[.8px] text-[#555e78] px-3 mb-1">Principal</p>
+      <a class="nav-item" href="/dashboard.html">
+        <span class="nav-icon">◈</span>
+        <span class="nav-item-text">Dashboard</span>
+        <span class="nav-tooltip">Dashboard</span>
+      </a>
+      <a class="nav-item active" href="/index.html">
+        <span class="nav-icon">✦</span>
+        <span class="nav-item-text">Agente POKI</span>
+        <span class="nav-tooltip">Agente POKI</span>
+      </a>
+
+      <p class="nav-section-sep text-[10px] font-semibold uppercase tracking-[.8px] text-[#555e78] px-3 mb-1 mt-4">Vistas</p>
+      <div class="nav-item" onclick="switchTab('chat')">
+        <span class="nav-icon">💬</span>
+        <span class="nav-item-text">Chat</span>
+        <span class="nav-tooltip">Chat</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('charts')">
+        <span class="nav-icon">◑</span>
+        <span class="nav-item-text">Gráficas</span>
+        <span class="nav-tooltip">Gráficas</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('table')">
+        <span class="nav-icon">⇅</span>
+        <span class="nav-item-text">Registros</span>
+        <span class="nav-tooltip">Registros</span>
+      </div>
+    </nav>
+
+    <!-- Resumen sidebar -->
+    <div class="sidebar-full flex flex-col gap-2 px-3 pb-3 pt-3 border-t border-white/[.05]">
+      <p class="text-[10px] font-semibold uppercase tracking-[.8px] text-[#555e78] px-1 mb-1">Resumen del mes</p>
+      <div class="stat-income bg-bg3 rounded-xl p-3 border border-white/[.04]">
+        <div class="text-[10px] text-[#6b7280] mb-1">Ingresos</div>
+        <div class="text-[15px] font-bold text-[#10b981]" id="sInc">—</div>
+      </div>
+      <div class="stat-expense bg-bg3 rounded-xl p-3 border border-white/[.04]">
+        <div class="text-[10px] text-[#6b7280] mb-1">Gastos</div>
+        <div class="text-[15px] font-bold text-[#ef4444]" id="sExp">—</div>
+      </div>
+      <div class="stat-balance bg-bg3 rounded-xl p-3 border border-white/[.04]">
+        <div class="text-[10px] text-[#6b7280] mb-1">Balance</div>
+        <div class="text-[15px] font-bold text-[#a855f7]" id="sBal">—</div>
+      </div>
+
+      <p class="text-[10px] font-semibold uppercase tracking-[.8px] text-[#555e78] px-1 mt-2 mb-1">Metas activas</p>
+      <div id="goalsList" class="flex flex-col gap-2">
+        <div class="text-[12px] text-[#555e78] px-1">Sin metas aún</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══════════ COLUMNA DERECHA ══════════ -->
+  <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+
+    <!-- HEADER -->
+    <header class="flex-shrink-0 h-16 flex items-center justify-between px-7 bg-bg2 border-b border-white/[.05]">
+      <!-- Identidad POKI -->
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-[rgba(139,0,255,.18)] border border-[rgba(139,0,255,.35)] flex items-center justify-center text-[14px]"
+             style="box-shadow:0 0 16px rgba(139,0,255,.3)">✦</div>
+        <div>
+          <div class="text-[14px] font-semibold tracking-tight">Agente POKI</div>
+          <div class="flex items-center gap-1.5">
+            <div class="online-dot"></div>
+            <span class="text-[11px] text-[#6b7280]">En línea</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex items-center gap-1 bg-bg3 p-1 rounded-xl border border-white/[.05]">
+        <button class="tab-btn active" id="tab-btn-chat"   onclick="switchTab('chat')">💬 Chat</button>
+        <button class="tab-btn"        id="tab-btn-charts" onclick="switchTab('charts')">◑ Gráficas</button>
+        <button class="tab-btn"        id="tab-btn-table"  onclick="switchTab('table')">⇅ Registros</button>
+      </div>
+
+      <!-- Link dashboard -->
+      <a href="/dashboard.html"
+         class="flex items-center gap-1.5 px-3 py-[7px] rounded-lg text-[13px] font-medium text-[#8b92a8]
+                bg-surface border border-white/[.07] hover:border-white/[.13] hover:text-[#e8eaf0] transition-all duration-150">
+        ◈ Dashboard
+      </a>
+    </header>
+
+    <!-- ══ TAB: CHAT ══ -->
+    <div id="tab-chat" class="tab-panel active">
+      <!-- Messages -->
+      <div class="flex-1 overflow-y-auto px-7 py-5 flex flex-col gap-3" id="messages">
+        <!-- Bienvenida -->
+        <div class="flex items-start gap-3 page-section">
+          <div class="w-7 h-7 rounded-full bg-[rgba(139,0,255,.18)] border border-[rgba(139,0,255,.35)] flex items-center justify-center text-[12px] flex-shrink-0 mt-0.5"
+               style="box-shadow:0 0 12px rgba(139,0,255,.25)">✦</div>
+          <div class="bubble-bot">
+            <div class="intent-tag tag-bot">POKI</div>
+            ¡Hola! Soy tu asistente financiero. Dime qué movimiento quieres registrar:<br><br>
+            💰 <strong>Ingreso</strong> → "Recibí $2.000.000 de salario"<br>
+            💸 <strong>Gasto</strong> → "Gasté $20.000 en comida"<br>
+            🎯 <strong>Meta</strong> → "Crea meta Viaje con $500.000"<br>
+            ➕ <strong>Aporte</strong> → "Agregué $50.000 a meta Viaje"
+          </div>
+        </div>
+      </div>
+
+      <!-- Hints + Input -->
+      <div class="flex-shrink-0 px-7 pb-6 flex flex-col gap-3 border-t border-white/[.04] pt-4">
+        <div class="flex gap-2 overflow-x-auto pb-0.5">
+          <div class="hint-pill" onclick="useHint(this)">Gasté $20.000 en comida</div>
+          <div class="hint-pill" onclick="useHint(this)">Recibí $2.000.000 de salario</div>
+          <div class="hint-pill" onclick="useHint(this)">Pagué $80.000 de transporte</div>
+          <div class="hint-pill" onclick="useHint(this)">Crea meta Viaje con $800.000</div>
+          <div class="hint-pill" onclick="useHint(this)">¿Cuánto he gastado este mes?</div>
+        </div>
+        <div class="chat-input-wrap">
+          <input type="text" id="userInput" placeholder="Escribe tu movimiento financiero..."
+                 onkeydown="if(event.key==='Enter')sendMsg()">
+          <button class="send-btn" id="sendBtn" onclick="sendMsg()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TAB: CHARTS ══ -->
+    <div id="tab-charts" class="tab-panel">
+      <div class="flex-1 overflow-y-auto px-7 py-5 flex flex-col gap-4" id="chartOuter">
+        <div class="flex flex-col items-center justify-center h-[300px] gap-3 text-[#555e78]">
+          <div class="text-5xl opacity-20">◑</div>
+          <p class="text-[13px]">Registra movimientos para ver tus gráficas</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TAB: TABLE ══ -->
+    <div id="tab-table" class="tab-panel">
+      <div class="flex-1 overflow-y-auto px-7 py-5">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <p class="font-semibold text-[15px]">Registros</p>
+            <p class="text-[12px] text-[#6b7280] mt-0.5">Historial de transacciones</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="fb active" onclick="filterTbl('all',this)">Todos</button>
+            <button class="fb" onclick="filterTbl('income',this)">Ingresos</button>
+            <button class="fb" onclick="filterTbl('expense',this)">Gastos</button>
+          </div>
+        </div>
+        <div class="bg-bg2 border border-white/[.05] rounded-2xl overflow-hidden">
+          <div id="tableWrap">
+            <div class="flex flex-col items-center justify-center h-[220px] gap-3 text-[#555e78]">
+              <div class="text-4xl opacity-20">⇅</div>
+              <p class="text-[13px]">Sin registros aún</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /right col -->
+</div><!-- /layout -->
+<script src="./js/poki.js"></script>
+</body>
+</html>

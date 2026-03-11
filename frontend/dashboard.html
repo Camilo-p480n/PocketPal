@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PocketPall— Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            background: #0a0b0f;
+            color: #e8eaf0;
+            min-height: 100vh;
+            font-size: 14px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-family: inherit;
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1a1b28;
+            border-radius: 99px;
+        }
+
+        input,
+        textarea,
+        select {
+            font-family: 'Sora', sans-serif;
+            background: #14151e;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            color: #e8eaf0;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 14px;
+            transition: border-color .2s, box-shadow .2s;
+            width: 100%;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #7c00ff;
+            box-shadow: 0 0 0 3px rgba(124, 0, 255, 0.15);
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: #555e78;
+        }
+
+        /* ── App Shell ── */
+        .app-shell {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            grid-template-rows: 64px 1fr;
+            min-height: 100vh;
+        }
+
+        /* ── Sidebar (desktop) ── */
+        .sidebar {
+            grid-row: 1/3;
+            background: #0f1017;
+            border-right: 1px solid rgba(255, 255, 255, 0.07);
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 30;
+        }
+
+        .sidebar::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 180px;
+            background: linear-gradient(to top, rgba(124, 0, 255, 0.07), transparent);
+            pointer-events: none;
+        }
+
+        /* ── Mobile sidebar overlay ── */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(3px);
+            z-index: 40;
+            opacity: 0;
+            transition: opacity .25s;
+        }
+
+        .sidebar-overlay.open {
+            opacity: 1;
+        }
+
+        /* ── Mobile sidebar drawer ── */
+        .sidebar-mobile {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: -290px;
+            width: 290px;
+            height: 100vh;
+            background: #0f1017;
+            border-right: 1px solid rgba(124, 0, 255, 0.2);
+            flex-direction: column;
+            z-index: 50;
+            transition: left .3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            box-shadow: 4px 0 40px rgba(124, 0, 255, 0.15);
+        }
+
+        .sidebar-mobile.open {
+            left: 0;
+        }
+
+        .sidebar-mobile::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 180px;
+            background: linear-gradient(to top, rgba(124, 0, 255, 0.07), transparent);
+            pointer-events: none;
+        }
+
+        /* ── Header ── */
+        .app-header {
+            background: #0f1017;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            height: 64px;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        /* ── Main content ── */
+        .app-content {
+            padding: 28px;
+            overflow-y: auto;
+            background: #0a0b0f;
+        }
+
+        /* ── Bottom nav (mobile only) ── */
+        .bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 68px;
+            background: #0f1017;
+            border-top: 1px solid rgba(124, 0, 255, 0.15);
+            z-index: 30;
+            padding: 0 8px;
+            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* ── Stat cards ── */
+        .stat-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: #0f1017;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 20px;
+            padding: 22px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color .2s, transform .2s;
+        }
+
+        .stat-card:hover {
+            border-color: rgba(124, 0, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(124, 0, 255, 0.1);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            opacity: 0.07;
+            transform: translate(30%, -30%);
+        }
+
+        .stat-card.income::before {
+            background: #00e5a0;
+        }
+
+        .stat-card.expense::before {
+            background: #ff4d6d;
+        }
+
+        .stat-card.balance::before {
+            background: #7c00ff;
+        }
+
+        .stat-card.goals::before {
+            background: #f5c542;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #8b92a8;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-family: 'Sora', sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .stat-card.income .stat-value {
+            color: #00e5a0;
+        }
+
+        .stat-card.expense .stat-value {
+            color: #ff4d6d;
+        }
+
+        .stat-card.balance .stat-value {
+            color: #9d4dff;
+        }
+
+        .stat-card.goals .stat-value {
+            color: #f5c542;
+        }
+
+        .stat-change {
+            font-size: 11px;
+            color: #8b92a8;
+        }
+
+        .stat-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 20px;
+            opacity: 0.45;
+        }
+
+        /* ── Grid layouts ── */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .grid-3-2 {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        /* ── Card ── */
+        .card {
+            background: #0f1017;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 20px;
+            padding: 24px;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-family: 'Sora', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+        }
+
+        .card-subtitle {
+            font-size: 12px;
+            color: #8b92a8;
+            margin-top: 2px;
+        }
+
+        /* ── Table ── */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #555e78;
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        td {
+            padding: 11px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+            font-size: 13px;
+            color: #8b92a8;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(124, 0, 255, 0.04);
+            color: #e8eaf0;
+        }
+
+        /* ── Pagination ── */
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .pagination-info {
+            font-size: 12px;
+            color: #555e78;
+        }
+
+        .pagination-btns {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .page-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: #14151e;
+            color: #8b92a8;
+            font-size: 13px;
+            font-weight: 600;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            border-color: rgba(124, 0, 255, 0.3);
+            color: #9d4dff;
+        }
+
+        .page-btn.active {
+            background: rgba(124, 0, 255, 0.15);
+            border-color: rgba(124, 0, 255, 0.35);
+            color: #9d4dff;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* ── Chart containers ── */
+        .chart-container {
+            position: relative;
+            height: 230px;
+        }
+
+        .chart-container-sm {
+            position: relative;
+            height: 155px;
+        }
+
+        /* ── Charts carousel (mobile) ── */
+        .charts-carousel {
+            display: flex;
+            gap: 14px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 6px;
+        }
+
+        .charts-carousel::-webkit-scrollbar {
+            height: 3px;
+        }
+
+        .charts-carousel::-webkit-scrollbar-thumb {
+            background: rgba(124, 0, 255, 0.3);
+            border-radius: 99px;
+        }
+
+        .chart-slide {
+            flex: 0 0 82vw;
+            scroll-snap-align: start;
+        }
+
+        /* ── Type toggle ── */
+        .type-toggle {
+            display: flex;
+            background: #14151e;
+            border-radius: 12px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .type-btn {
+            flex: 1;
+            padding: 9px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 13px;
+            color: #8b92a8;
+            transition: all .2s;
+            cursor: pointer;
+        }
+
+        .type-btn.income.active {
+            background: rgba(0, 229, 160, 0.12);
+            color: #00e5a0;
+        }
+
+        .type-btn.expense.active {
+            background: rgba(255, 77, 109, 0.12);
+            color: #ff4d6d;
+        }
+
+        /* ── Progress bar ── */
+        .progress-bar-wrap {
+            height: 6px;
+            background: #14151e;
+            border-radius: 99px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, #7c00ff, #8b00ff, #b44dff);
+            transition: width .6s ease;
+        }
+
+        /* ── Goal cards ── */
+        .goal-card {
+            background: #14151e;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 12px;
+            padding: 16px;
+            transition: border-color .2s;
+        }
+
+        .goal-card:hover {
+            border-color: rgba(124, 0, 255, 0.25);
+        }
+
+        .goal-card.completed {
+            opacity: 0.6;
+        }
+
+        .goal-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .goal-amounts {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #8b92a8;
+            margin: 6px 0;
+        }
+
+        .goal-pct {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 12px;
+            color: #9d4dff;
+        }
+
+        /* ── Skeleton ── */
+        .skeleton {
+            background: linear-gradient(90deg, #14151e 25%, #1a1b28 50%, #14151e 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+            border-radius: 6px;
+        }
+
+        @keyframes shimmer {
+            to {
+                background-position: -200% 0;
+            }
+        }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s;
+            padding: 16px;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background: #0f1017;
+            border: 1px solid rgba(124, 0, 255, 0.2);
+            border-radius: 20px;
+            padding: 24px;
+            width: 100%;
+            max-width: 480px;
+            transform: translateY(20px) scale(0.97);
+            transition: transform .25s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 0 60px rgba(124, 0, 255, 0.2);
+        }
+
+        .modal-overlay.open .modal {
+            transform: none;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-family: 'Sora', sans-serif;
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: #14151e;
+            color: #8b92a8;
+            display: grid;
+            place-items: center;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .modal-close:hover {
+            background: #1a1b28;
+            color: #e8eaf0;
+        }
+
+        /* ── Forms ── */
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            color: #8b92a8;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+
+        /* ── Badges ── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 99px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .badge-income {
+            background: rgba(0, 229, 160, 0.12);
+            color: #00e5a0;
+        }
+
+        .badge-expense {
+            background: rgba(255, 77, 109, 0.12);
+            color: #ff4d6d;
+        }
+
+        .badge-blue {
+            background: rgba(77, 159, 255, 0.12);
+            color: #4d9fff;
+        }
+
+        .badge-gold {
+            background: rgba(245, 197, 66, 0.12);
+            color: #f5c542;
+        }
+
+        .badge-saving {
+            background: rgba(124, 0, 255, 0.15);
+            color: #b44dff;
+        }
+
+        /* ── Amounts ── */
+        .amount-income {
+            color: #00e5a0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .amount-expense {
+            color: #ff4d6d;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 11px 20px;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all .2s;
+            white-space: nowrap;
+            font-family: 'Sora', sans-serif;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7c00ff, #8b00ff);
+            color: #fff;
+            width: 100%;
+            padding: 13px;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #8b00ff, #9d1aff);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(124, 0, 255, 0.35);
+        }
+
+        .btn-secondary {
+            background: #1a1b28;
+            color: #e8eaf0;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .btn-secondary:hover {
+            border-color: rgba(124, 0, 255, 0.3);
+            background: rgba(124, 0, 255, 0.08);
+        }
+
+        .btn-danger {
+            background: rgba(255, 77, 109, 0.12);
+            color: #ff4d6d;
+            border: 1px solid rgba(255, 77, 109, 0.2);
+        }
+
+        .btn-ghost {
+            color: #8b92a8;
+            padding: 8px 12px;
+        }
+
+        .btn-ghost:hover {
+            color: #e8eaf0;
+            background: #1a1b28;
+        }
+
+        .btn-sm {
+            padding: 7px 12px;
+            font-size: 12px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        /* ── Nav shared styles ── */
+        .nav-section-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #555e78;
+            padding: 0 8px;
+            margin-bottom: 6px;
+            margin-top: 16px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            color: #8b92a8;
+            font-weight: 500;
+            transition: all .15s;
+            cursor: pointer;
+            margin-bottom: 2px;
+            position: relative;
+        }
+
+        .nav-item:hover {
+            background: rgba(124, 0, 255, 0.08);
+            color: #e8eaf0;
+        }
+
+        .nav-item.active {
+            background: rgba(124, 0, 255, 0.12);
+            color: #9d4dff;
+            border: 1px solid rgba(124, 0, 255, 0.2);
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 60%;
+            background: #7c00ff;
+            border-radius: 0 3px 3px 0;
+        }
+
+        .nav-icon {
+            font-size: 15px;
+            width: 20px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        /* ── Logo / user ── */
+        .logo-mark {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #7c00ff, #8b00ff);
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            font-family: 'Sora', sans-serif;
+            font-weight: 800;
+            font-size: 14px;
+            color: #fff;
+            flex-shrink: 0;
+            box-shadow: 0 0 18px rgba(124, 0, 255, 0.35);
+        }
+
+        .logo-tag {
+            font-size: 10px;
+            color: #9d4dff;
+            background: rgba(124, 0, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 99px;
+            font-weight: 600;
+            border: 1px solid rgba(124, 0, 255, 0.2);
+        }
+
+        .user-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c00ff, #4d9fff);
+            display: grid;
+            place-items: center;
+            font-weight: 700;
+            font-size: 13px;
+            color: #fff;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .user-avatar img {
+            width: 100%;
+        }
+
+        .greeting-name {
+            color: #9d4dff;
+        }
+
+        /* ── Toast ── */
+        #toast-container {
+            position: fixed;
+            bottom: 80px;
+            right: 16px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #1a1b28;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            min-width: 240px;
+            transform: translateX(120%);
+            transition: transform .35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 8px 48px rgba(0, 0, 0, 0.6);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            font-size: 11px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .toast-success {
+            border-color: rgba(0, 229, 160, 0.3);
+        }
+
+        .toast-success .toast-icon {
+            background: rgba(0, 229, 160, 0.12);
+            color: #00e5a0;
+        }
+
+        .toast-error {
+            border-color: rgba(255, 77, 109, 0.3);
+        }
+
+        .toast-error .toast-icon {
+            background: rgba(255, 77, 109, 0.12);
+            color: #ff4d6d;
+        }
+
+        .toast-info .toast-icon {
+            background: rgba(77, 159, 255, 0.12);
+            color: #4d9fff;
+        }
+
+        /* ── Spinner ── */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.07);
+            border-top-color: #7c00ff;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── Sync button ── */
+        #btn-sync,
+        #btn-sync-mobile {
+            background: rgba(124, 0, 255, 0.08);
+            border: 1px solid rgba(124, 0, 255, 0.2);
+            color: #9d4dff;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: 'Sora', sans-serif;
+            transition: all .2s;
+            width: 100%;
+        }
+
+        #btn-sync:hover,
+        #btn-sync-mobile:hover {
+            background: rgba(124, 0, 255, 0.15);
+            border-color: rgba(124, 0, 255, 0.4);
+        }
+
+        .sync-loading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #8b92a8;
+            font-size: 12px;
+        }
+
+        .sync-pet {
+            animation: bounce 0.6s infinite alternate;
+        }
+
+        @keyframes bounce {
+            from {
+                transform: translateY(0);
+            }
+
+            to {
+                transform: translateY(-5px);
+            }
+        }
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align: center;
+            padding: 40px 24px;
+            color: #555e78;
+        }
+
+        .empty-state-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            opacity: 0.4;
+        }
+
+        .empty-state-text {
+            font-size: 13px;
+        }
+
+        /* ── Animations ── */
+        .page-section {
+            animation: fadeUp .3s ease forwards;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        /* ═══════════════════════════
+           TABLET  ≤ 1100px
+        ═══════════════════════════ */
+        @media (max-width: 1100px) {
+            .stat-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* ═══════════════════════════
+           MOBILE  ≤ 768px
+        ═══════════════════════════ */
+        @media (max-width: 768px) {
+
+            /* Shell */
+            .sidebar {
+                display: none;
+            }
+
+            .sidebar-mobile {
+                display: flex;
+            }
+
+            .sidebar-overlay {
+                display: block;
+            }
+
+            .app-shell {
+                grid-template-columns: 1fr;
+                grid-template-rows: 56px 1fr;
+            }
+
+            /* Header */
+            .app-header {
+                padding: 0 14px;
+                height: 56px;
+            }
+
+            .header-desktop-actions {
+                display: none !important;
+            }
+
+            .header-mobile-actions {
+                display: flex !important;
+            }
+
+            /* Content */
+            .app-content {
+                padding: 14px;
+                padding-bottom: 88px;
+            }
+
+            /* Stats: 2 col compact */
+            .stat-cards {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin-bottom: 14px;
+            }
+
+            .stat-card {
+                padding: 14px;
+                border-radius: 16px;
+            }
+
+            .stat-value {
+                font-size: 18px;
+            }
+
+            .stat-label {
+                font-size: 9px;
+                margin-bottom: 5px;
+            }
+
+            .stat-icon {
+                font-size: 14px;
+                top: 12px;
+                right: 12px;
+            }
+
+            /* Charts */
+            .charts-desktop {
+                display: none !important;
+            }
+
+            .charts-mobile {
+                display: block !important;
+            }
+
+            .grid-2,
+            .grid-3-2 {
+                grid-template-columns: 1fr;
+            }
+
+            /* Bottom nav */
+            .bottom-nav {
+                display: flex;
+                align-items: center;
+                justify-content: space-around;
+            }
+
+            /* Toast */
+            #toast-container {
+                bottom: 80px;
+                right: 10px;
+            }
+
+            .toast {
+                min-width: 200px;
+                font-size: 12px;
+            }
+
+            /* Modal full-width on small screens */
+            .modal {
+                padding: 20px;
+            }
+        }
+
+        /* ═══════════════════════════
+           SMALL MOBILE  ≤ 420px
+        ═══════════════════════════ */
+        @media (max-width: 420px) {
+            .stat-cards {
+                gap: 8px;
+            }
+
+            .stat-card {
+                padding: 12px;
+                border-radius: 14px;
+            }
+
+            .stat-value {
+                font-size: 16px;
+            }
+
+            .app-content {
+                padding: 10px;
+                padding-bottom: 86px;
+            }
+
+            .card {
+                padding: 16px;
+                border-radius: 16px;
+            }
+
+            .chart-slide {
+                flex: 0 0 88vw;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ── Mobile sidebar overlay ── -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeMobileSidebar()"></div>
+
+    <!-- ── Mobile sidebar drawer ── -->
+    <div class="sidebar-mobile" id="sidebar-mobile">
+        <div
+            style="display:flex;align-items:center;gap:10px;padding:18px 16px;border-bottom:1px solid rgba(255,255,255,0.07);min-height:58px;">
+            <div class="logo-mark">P</div>
+            <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:15px;letter-spacing:-0.3px;">PocketPall</div>
+            <span class="logo-tag">Finance</span>
+            <button onclick="closeMobileSidebar()"
+                style="margin-left:auto;color:#555e78;font-size:22px;line-height:1;padding:4px 8px;border-radius:8px;background:#14151e;">×</button>
+        </div>
+        <nav style="flex:1;padding:14px 12px;overflow-y:auto;">
+            <div class="nav-section-label">Principal</div>
+            <a class="nav-item active" href="/dashboard.html"><span class="nav-icon">◈</span> Dashboard</a>
+            <a class="nav-item" href="/poki.html"><span class="nav-icon">✦</span> Agente POKI</a>
+            <div class="nav-section-label">Finanzas</div>
+            <div class="nav-item" onclick="scrollToSectionAndClose('section-charts-mobile')"><span
+                    class="nav-icon">◑</span> Gráficas</div>
+            <div class="nav-item" onclick="scrollToSectionAndClose('section-transactions')"><span
+                    class="nav-icon">⇅</span> Transacciones</div>
+            <div class="nav-item" onclick="scrollToSectionAndClose('section-goals')"><span class="nav-icon">◎</span>
+                Metas</div>
+            <div class="nav-section-label">Acciones</div>
+            <div class="nav-item" onclick="openModal('modal-tx');closeMobileSidebar()"><span class="nav-icon">＋</span>
+                Nueva transacción</div>
+            <div class="nav-item" onclick="openModal('modal-goal');closeMobileSidebar()"><span class="nav-icon">⊕</span>
+                Nueva meta</div>
+            <div style="padding:8px;margin-top:4px;">
+                <button id="btn-sync-mobile" onclick="syncTransactions()">🔄 Sincronizar movimientos</button>
+                <p id="sync-status-mobile" style="font-size:11px;color:#8b92a8;margin-top:6px;padding-left:4px;"></p>
+            </div>
+        </nav>
+        <div style="padding:14px 12px;border-top:1px solid rgba(255,255,255,0.07);">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:#14151e;">
+                <div class="user-avatar" id="user-avatar-mobile"></div>
+                <div style="overflow:hidden;flex:1;">
+                    <div style="font-size:13px;font-weight:500;" id="user-name-mobile">—</div>
+                    <div style="font-size:11px;color:#8b92a8;" id="user-email-mobile">—</div>
+                </div>
+            </div>
+            <button class="btn btn-ghost btn-full" style="margin-top:8px;font-size:12px;" onclick="auth.logout()">Cerrar
+                sesión</button>
+        </div>
+    </div>
+
+    <!-- ── App Shell ── -->
+    <div class="app-shell">
+
+        <!-- ── Desktop Sidebar ── -->
+        <aside class="sidebar">
+            <div
+                style="display:flex;align-items:center;gap:10px;padding:20px;border-bottom:1px solid rgba(255,255,255,0.07);height:64px;">
+                <div class="logo-mark">P</div>
+                <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:16px;letter-spacing:-0.3px;">PocketPall
+                </div>
+                <span class="logo-tag">Finance</span>
+            </div>
+            <nav style="flex:1;padding:16px 12px;">
+                <div class="nav-section-label">Principal</div>
+                <a class="nav-item active" href="/dashboard.html"><span class="nav-icon">◈</span> Dashboard</a>
+                <a class="nav-item" href="./poki.html"><span class="nav-icon">✦</span> Agente POKI</a>
+                <div class="nav-section-label">Finanzas</div>
+                <div class="nav-item" onclick="scrollToSection('section-transactions')"><span class="nav-icon">⇅</span>
+                    Transacciones</div>
+                <div class="nav-item" onclick="scrollToSection('section-goals')"><span class="nav-icon">◎</span> Metas
+                </div>
+                <div class="nav-item" onclick="scrollToSection('section-charts')"><span class="nav-icon">◑</span>
+                    Gráficas</div>
+                <div class="nav-section-label">Acciones</div>
+                <div class="nav-item" onclick="openModal('modal-tx')"><span class="nav-icon">＋</span> Nueva transacción
+                </div>
+                <div class="nav-item" onclick="openModal('modal-goal')"><span class="nav-icon">⊕</span> Nueva meta</div>
+                <div style="padding:8px;margin-top:4px;">
+                    <button id="btn-sync" onclick="syncTransactions()">🔄 Sincronizar movimientos bancarios</button>
+                    <p id="sync-status" style="font-size:11px;color:#8b92a8;margin-top:6px;padding-left:4px;"></p>
+                </div>
+            </nav>
+            <div style="padding:16px 12px;border-top:1px solid rgba(255,255,255,0.07);">
+                <div
+                    style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:#14151e;">
+                    <div class="user-avatar" id="user-avatar"></div>
+                    <div style="overflow:hidden;flex:1;">
+                        <div style="font-size:13px;font-weight:500;" id="user-name">—</div>
+                        <div style="font-size:11px;color:#8b92a8;" id="user-email">—</div>
+                    </div>
+                </div>
+                <button class="btn btn-ghost btn-full" style="margin-top:8px;font-size:12px;"
+                    onclick="auth.logout()">Cerrar sesión</button>
+            </div>
+        </aside>
+
+        <!-- ── Header ── -->
+        <header class="app-header">
+            <!-- Mobile hamburger -->
+            <button onclick="openMobileSidebar()" id="hamburger-btn"
+                style="display:none;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;background:#14151e;color:#e8eaf0;font-size:18px;">☰</button>
+
+            <div style="font-family:'Sora',sans-serif;font-size:17px;font-weight:700;letter-spacing:-0.3px;">
+                Hola, <span class="greeting-name">—</span> 👋
+            </div>
+
+            <!-- Desktop actions -->
+            <div style="display:flex;align-items:center;gap:8px;" class="header-desktop-actions">
+                <a href="/frontend/poki.html" class="btn btn-primary btn-sm">✦ Hablar con POKI</a>
+                <!-- <button class="btn btn-primary btn-sm" style="width:auto;" onclick="openModal('modal-tx')">+
+                    Transacción</button> -->
+            </div>
+            <!-- Mobile actions -->
+            <div style="display:none;align-items:center;gap:6px;" class="header-mobile-actions">
+                <a href="/frontend/ai.html"
+                    style="width:34px;height:34px;border-radius:10px;background:#1a1b28;border:1px solid rgba(255,255,255,0.07);display:grid;place-items:center;font-size:14px;">✦</a>
+                <button
+                    style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#7c00ff,#8b00ff);color:#fff;display:grid;place-items:center;font-size:18px;font-weight:700;"
+                    onclick="openModal('modal-tx')">+</button>
+            </div>
+        </header>
+
+        <!-- ── Main content ── -->
+        <main class="app-content">
+
+            <!-- Stat cards -->
+            <div class="stat-cards page-section">
+                <div class="stat-card income">
+                    <div class="stat-icon">↑</div>
+                    <div class="stat-label">Ingresos</div>
+                    <div class="stat-value" id="stat-income">—</div>
+                    <div class="stat-change">Este período</div>
+                </div>
+                <div class="stat-card expense">
+                    <div class="stat-icon">↓</div>
+                    <div class="stat-label">Gastos</div>
+                    <div class="stat-value" id="stat-expense">—</div>
+                    <div class="stat-change">Este período</div>
+                </div>
+                <div class="stat-card balance">
+                    <div class="stat-icon">≈</div>
+                    <div class="stat-label">Balance</div>
+                    <div class="stat-value" id="stat-balance">—</div>
+                    <div class="stat-change">Ingreso − Gastos</div>
+                </div>
+                <div class="stat-card goals">
+                    <div class="stat-icon">◎</div>
+                    <div class="stat-label">Metas</div>
+                    <div class="stat-value" id="stat-goals">—</div>
+                    <div class="stat-change">En progreso</div>
+                </div>
+            </div>
+
+            <!-- Charts DESKTOP -->
+            <div id="section-charts" class="charts-desktop page-section" style="margin-bottom:22px;">
+                <div class="grid-2" style="margin-bottom:20px;">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Ingresos vs. Gastos</div>
+                                <div class="card-subtitle">Por mes</div>
+                            </div>
+                        </div>
+                        <div class="chart-container"><canvas id="chart-monthly"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Gastos por categoría</div>
+                                <div class="card-subtitle">Distribución</div>
+                            </div>
+                        </div>
+                        <div class="chart-container"><canvas id="chart-categories"></canvas></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">Balance acumulado</div>
+                            <div class="card-subtitle">Evolución mes a mes</div>
+                        </div>
+                    </div>
+                    <div class="chart-container-sm"><canvas id="chart-balance"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Charts MOBILE carousel -->
+            <div id="section-charts-mobile" class="charts-mobile page-section" style="display:none;margin-bottom:18px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                    <span
+                        style="font-size:12px;color:#8b92a8;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Gráficas</span>
+                    <span style="font-size:11px;color:#555e78;">← desliza →</span>
+                </div>
+                <div class="charts-carousel" id="charts-carousel">
+                    <div class="chart-slide card">
+                        <div class="card-header" style="margin-bottom:12px;">
+                            <div>
+                                <div class="card-title" style="font-size:13px;">Ingresos vs. Gastos</div>
+                                <div class="card-subtitle">Por mes</div>
+                            </div>
+                        </div>
+                        <div style="position:relative;height:170px;"><canvas id="chart-monthly-m"></canvas></div>
+                    </div>
+                    <div class="chart-slide card">
+                        <div class="card-header" style="margin-bottom:12px;">
+                            <div>
+                                <div class="card-title" style="font-size:13px;">Gastos por categoría</div>
+                                <div class="card-subtitle">Distribución</div>
+                            </div>
+                        </div>
+                        <div style="position:relative;height:170px;"><canvas id="chart-categories-m"></canvas></div>
+                    </div>
+                    <div class="chart-slide card">
+                        <div class="card-header" style="margin-bottom:12px;">
+                            <div>
+                                <div class="card-title" style="font-size:13px;">Balance acumulado</div>
+                                <div class="card-subtitle">Evolución mes a mes</div>
+                            </div>
+                        </div>
+                        <div style="position:relative;height:170px;"><canvas id="chart-balance-m"></canvas></div>
+                    </div>
+                </div>
+                <!-- Dot indicators -->
+                <div style="display:flex;justify-content:center;gap:6px;margin-top:10px;" id="carousel-dots">
+                    <div class="carousel-dot active" data-i="0"></div>
+                    <div class="carousel-dot" data-i="1"></div>
+                    <div class="carousel-dot" data-i="2"></div>
+                </div>
+            </div>
+            <style>
+                .carousel-dot {
+                    height: 3px;
+                    border-radius: 99px;
+                    background: #1a1b28;
+                    transition: all .25s;
+                    width: 6px;
+                    cursor: pointer;
+                }
+
+                .carousel-dot.active {
+                    width: 20px;
+                    background: #7c00ff;
+                }
+            </style>
+
+            <!-- Transactions + Goals -->
+            <div class="grid-3-2 page-section" style="margin-bottom:20px;">
+
+                <!-- Transactions -->
+                <div id="section-transactions" class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">Transacciones</div>
+                            <div class="card-subtitle" id="tx-subtitle">Cargando…</div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" style="width:auto;" onclick="openModal('modal-tx')">+
+                            Nueva</button>
+                    </div>
+
+                    <!-- Filters -->
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+                        <select id="filter-type" style="max-width:120px;padding:6px 8px;font-size:12px;"
+                            onchange="applyFilters()">
+                            <option value="">Todos</option>
+                            <option value="income">Ingresos</option>
+                            <option value="expense">Gastos</option>
+                        </select>
+                        <select id="filter-category" style="max-width:150px;padding:6px 8px;font-size:12px;"
+                            onchange="applyFilters()">
+                            <option value="">Todas las categorías</option>
+                        </select>
+                        <input type="date" id="filter-start" style="max-width:130px;padding:6px 8px;font-size:12px;"
+                            onchange="applyFilters()" />
+                        <input type="date" id="filter-end" style="max-width:130px;padding:6px 8px;font-size:12px;"
+                            onchange="applyFilters()" />
+                        <button class="btn btn-ghost btn-sm" onclick="clearFilters()">✕ Limpiar</button>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Monto</th>
+                                    <th>Categoría</th>
+                                    <th>Descripción</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tx-tbody">
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="skeleton" style="height:36px;"></div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="skeleton" style="height:36px;margin-top:4px;"></div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="skeleton" style="height:36px;margin-top:4px;"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="pagination" id="tx-pagination" style="display:none;">
+                        <span class="pagination-info" id="tx-page-info">1–5 de 0</span>
+                        <div class="pagination-btns">
+                            <button class="page-btn" id="btn-prev" onclick="changePage(-1)" disabled>‹</button>
+                            <div id="page-numbers" style="display:flex;gap:4px;"></div>
+                            <button class="page-btn" id="btn-next" onclick="changePage(1)">›</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Goals -->
+                <div id="section-goals" class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">Metas de ahorro</div>
+                            <div class="card-subtitle">Activas</div>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" onclick="openModal('modal-goal')">+ Meta</button>
+                    </div>
+                    <div id="goals-list" style="display:flex;flex-direction:column;gap:12px;">
+                        <div class="skeleton" style="height:80px;border-radius:12px;"></div>
+                        <div class="skeleton" style="height:80px;border-radius:12px;"></div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ── Bottom Navigation (mobile) ── -->
+    <nav class="bottom-nav" id="bottom-nav">
+        <button onclick="scrollToSectionAndClose('section-charts-mobile')" class="bottom-nav-btn"
+            style="display:flex;flex-direction:column;align-items:center;gap:2px;color:#555e78;font-size:10px;font-weight:600;padding:8px 12px;border-radius:10px;transition:all .2s;min-width:52px;">
+            <span style="font-size:19px;">◑</span>Gráficas
+        </button>
+        <button onclick="scrollToSection('section-transactions')" class="bottom-nav-btn"
+            style="display:flex;flex-direction:column;align-items:center;gap:2px;color:#555e78;font-size:10px;font-weight:600;padding:8px 12px;border-radius:10px;transition:all .2s;min-width:52px;">
+            <span style="font-size:19px;">⇅</span>Txns
+        </button>
+        <!-- FAB center button -->
+        <button onclick="openModal('modal-tx')"
+            style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:0;position:relative;top:-10px;min-width:52px;">
+            <span
+                style="width:50px;height:50px;background:linear-gradient(135deg,#7c00ff,#8b00ff);border-radius:15px;display:grid;place-items:center;font-size:24px;color:#fff;box-shadow:0 0 26px rgba(124,0,255,0.5),0 4px 16px rgba(0,0,0,0.4);">+</span>
+        </button>
+        <button onclick="scrollToSection('section-goals')" class="bottom-nav-btn"
+            style="display:flex;flex-direction:column;align-items:center;gap:2px;color:#555e78;font-size:10px;font-weight:600;padding:8px 12px;border-radius:10px;transition:all .2s;min-width:52px;">
+            <span style="font-size:19px;">◎</span>Metas
+        </button>
+        <button onclick="openMobileSidebar()" class="bottom-nav-btn"
+            style="display:flex;flex-direction:column;align-items:center;gap:2px;color:#555e78;font-size:10px;font-weight:600;padding:8px 12px;border-radius:10px;transition:all .2s;min-width:52px;">
+            <span style="font-size:19px;">☰</span>Menú
+        </button>
+    </nav>
+    <style>
+        .bottom-nav-btn:hover,
+        .bottom-nav-btn.active-nav {
+            color: #9d4dff !important;
+            background: rgba(124, 0, 255, 0.1) !important;
+        }
+    </style>
+
+    <!-- ── Modals ── -->
+    <div class="modal-overlay" id="modal-tx">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Nueva transacción</div>
+                <div class="modal-close" onclick="closeModal('modal-tx')">×</div>
+            </div>
+            <form id="form-tx" onsubmit="handleCreateTransaction(event)">
+                <div class="form-group">
+                    <label class="form-label">Tipo</label>
+                    <input type="hidden" id="tx-type" value="expense" />
+                    <div class="type-toggle">
+                        <div class="type-btn income" id="type-income" onclick="setTxType('income')">↑ Ingreso</div>
+                        <div class="type-btn expense active" id="type-expense" onclick="setTxType('expense')">↓ Gasto
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Monto</label>
+                        <input type="number" id="tx-amount" placeholder="0.00" step="0.01" min="0.01" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha</label>
+                        <input type="date" id="tx-date" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Categoría</label>
+                    <select id="tx-category" required>
+                        <option value="">Selecciona categoría</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Descripción (opcional)</label>
+                    <input type="text" id="tx-description" placeholder="Ej: Almuerzo en el trabajo" />
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-tx')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="create-tx-btn"
+                        style="width:auto;">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-goal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Nueva meta de ahorro</div>
+                <div class="modal-close" onclick="closeModal('modal-goal')">×</div>
+            </div>
+            <form id="form-goal" onsubmit="handleCreateGoal(event)">
+                <div class="form-group">
+                    <label class="form-label">Nombre de la meta</label>
+                    <input type="text" id="goal-title" placeholder="Ej: Viaje a Europa" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Monto objetivo</label>
+                    <input type="number" id="goal-amount" placeholder="0.00" step="0.01" min="1" required />
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-goal')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="create-goal-btn" style="width:auto;">Crear
+                        meta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-allocate">
+        <div class="modal" style="max-width:360px;">
+            <div class="modal-header">
+                <div class="modal-title">Abonar a meta</div>
+                <div class="modal-close" onclick="closeModal('modal-allocate')">×</div>
+            </div>
+            <p style="color:#8b92a8;margin-bottom:16px;font-size:13px;">
+                Meta: <strong id="allocate-goal-name" style="color:#e8eaf0;"></strong>
+            </p>
+            <form id="form-allocate" onsubmit="handleAllocate(event)">
+                <div class="form-group">
+                    <label class="form-label">Monto a abonar</label>
+                    <input type="number" id="allocate-amount" placeholder="0.00" step="0.01" min="0.01" required />
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary"
+                        onclick="closeModal('modal-allocate')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="allocate-btn" style="width:auto;">Abonar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script src="/frontend/js/api.js"></script>
+    <script src="/frontend/js/dashboard.js"></script>
+    <script>
+        /* ═══════════════════════════════════
+           Responsive helpers
+        ═══════════════════════════════════ */
+        function isMobile() { return window.innerWidth <= 768; }
+
+        function updateResponsive() {
+            const m = isMobile();
+            const hamburger = document.getElementById('hamburger-btn');
+            const desktopActions = document.querySelector('.header-desktop-actions');
+            const mobileActions = document.querySelector('.header-mobile-actions');
+            const chartsDesktop = document.querySelector('.charts-desktop');
+            const chartsMobile = document.getElementById('section-charts-mobile');
+
+            if (hamburger) hamburger.style.display = m ? 'flex' : 'none';
+            if (desktopActions) desktopActions.style.display = m ? 'none' : 'flex';
+            if (mobileActions) mobileActions.style.display = m ? 'flex' : 'none';
+            if (chartsDesktop) chartsDesktop.style.display = m ? 'none' : '';
+            if (chartsMobile) chartsMobile.style.display = m ? 'block' : 'none';
+        }
+        window.addEventListener('resize', updateResponsive);
+        document.addEventListener('DOMContentLoaded', updateResponsive);
+
+        /* ═══════════════════════════════════
+           Mobile sidebar
+        ═══════════════════════════════════ */
+        function openMobileSidebar() {
+            document.getElementById('sidebar-mobile').classList.add('open');
+            document.getElementById('sidebar-overlay').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeMobileSidebar() {
+            document.getElementById('sidebar-mobile').classList.remove('open');
+            document.getElementById('sidebar-overlay').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        function scrollToSectionAndClose(id) {
+            closeMobileSidebar();
+            setTimeout(() => scrollToSection(id), 300);
+        }
+
+        /* ═══════════════════════════════════
+           Scroll helper
+        ═══════════════════════════════════ */
+        function scrollToSection(id) {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        /* ═══════════════════════════════════
+           Carousel dots
+        ═══════════════════════════════════ */
+        document.addEventListener('DOMContentLoaded', () => {
+            const carousel = document.getElementById('charts-carousel');
+            const dots = document.querySelectorAll('.carousel-dot');
+            if (!carousel || !dots.length) return;
+
+            carousel.addEventListener('scroll', () => {
+                const slideW = carousel.querySelector('.chart-slide')?.offsetWidth || carousel.offsetWidth;
+                const idx = Math.round(carousel.scrollLeft / (slideW + 14));
+                dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+            });
+
+            dots.forEach(dot => {
+                dot.addEventListener('click', () => {
+                    const slideW = carousel.querySelector('.chart-slide')?.offsetWidth || carousel.offsetWidth;
+                    carousel.scrollTo({ left: +dot.dataset.i * (slideW + 14), behavior: 'smooth' });
+                });
+            });
+        });
+
+        /* ═══════════════════════════════════
+           Bottom nav active highlighting
+        ═══════════════════════════════════ */
+        document.querySelectorAll('.bottom-nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active-nav'));
+                btn.classList.add('active-nav');
+            });
+        });
+
+        /* ═══════════════════════════════════
+           Pagination — 5 rows per page
+           dashboard.js should call window.setTxData(rows)
+           instead of directly writing to #tx-tbody
+        ═══════════════════════════════════ */
+        window._txPage = 1;
+        window._txPerPage = 5;
+        window._txAll = [];
+
+        window.setTxData = function (rows) {
+            window._txAll = rows;
+            window._txPage = 1;
+            renderTxPage();
+        };
+
+        window.renderTxPage = function () {
+            const all = window._txAll;
+            const per = window._txPerPage;
+            const page = window._txPage;
+            const total = all.length;
+            const pages = Math.max(1, Math.ceil(total / per));
+            const start = (page - 1) * per;
+            const slice = all.slice(start, start + per);
+
+            // Update subtitle
+            const sub = document.getElementById('tx-subtitle');
+            if (sub) {
+                sub.textContent = total > 0
+                    ? `${start + 1}–${Math.min(start + per, total)} de ${total}`
+                    : 'Sin transacciones';
+            }
+
+            // Render rows — hook for dashboard.js
+            if (typeof window._renderTxRows === 'function') {
+                window._renderTxRows(slice);
+            }
+
+            // Pagination UI
+            const pag = document.getElementById('tx-pagination');
+            const info = document.getElementById('tx-page-info');
+            const prev = document.getElementById('btn-prev');
+            const next = document.getElementById('btn-next');
+            const numBox = document.getElementById('page-numbers');
+
+            if (total > per) {
+                pag.style.display = 'flex';
+                if (info) info.textContent = `${start + 1}–${Math.min(start + per, total)} de ${total}`;
+                if (prev) prev.disabled = page <= 1;
+                if (next) next.disabled = page >= pages;
+
+                if (numBox) {
+                    numBox.innerHTML = '';
+                    let from = Math.max(1, page - 2);
+                    let to = Math.min(pages, from + 4);
+                    if (to - from < 4) from = Math.max(1, to - 4);
+                    for (let p = from; p <= to; p++) {
+                        const b = document.createElement('button');
+                        b.className = 'page-btn' + (p === page ? ' active' : '');
+                        b.textContent = p;
+                        b.onclick = () => { window._txPage = p; renderTxPage(); };
+                        numBox.appendChild(b);
+                    }
+                }
+            } else {
+                if (pag) pag.style.display = 'none';
+            }
+        };
+
+        window.changePage = function (dir) {
+            const pages = Math.ceil(window._txAll.length / window._txPerPage);
+            window._txPage = Math.max(1, Math.min(pages, window._txPage + dir));
+            renderTxPage();
+        };
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,190 @@
+
+NOVA Finance — Estructura del proyecto
+══════════════════════════════════════════════════════════════════════
+
+financeapp/
+│
+├── .env.example              ← Plantilla de variables de entorno. Copiar a .env y rellenar.
+├── .env                      ← (NO subir a git) DB_URL, JWT_SECRET, ANTHROPIC_API_KEY, PORT...
+├── .gitignore                ← Excluir node_modules/, .env, logs/
+│
+├── package.json              ← Dependencias: express, pg, bcryptjs, jsonwebtoken,
+│                               helmet, express-rate-limit, dotenv, cors
+│                               devDeps: nodemon
+│
+├── server.js                 ← Punto de entrada. Llama a initializeDatabase() y luego
+│                               app.listen(). Si la DB falla, el proceso muere con exit(1).
+│
+├── public/                   ← Frontend estático servido por Express
+│   │
+│   ├── index.html            ← Login / Register (página pública, redirige si hay token)
+│   ├── dashboard.html        ← Dashboard principal (requiere estar logueado)
+│   ├── ai.html               ← Chat con el agente NOVA (requiere estar logueado)
+│   │
+│   ├── css/
+│   │   └── style.css         ← Estilos globales. Tema dark premium. Variables CSS en :root.
+│   │
+│   └── js/
+│       ├── api.js            ← Cliente HTTP centralizado. Define: auth, transactions,
+│       │                       categories, goals, summary, ai. También: fmt, toast,
+│       │                       saveAuth/clearAuth, requireAuth(). Incluir PRIMERO en cada HTML.
+│       └── dashboard.js      ← Lógica del dashboard: carga datos, renderiza Chart.js,
+│                               maneja modales de transacciones, metas y abonos.
+│
+└── src/                      ← Código del servidor (Node.js / Express)
+    │
+    ├── app.js                ← Configura Express: helmet, cors, rate limiters globales,
+    │                           static files, monta todas las rutas, registra errorHandler.
+    │
+    ├── config/
+    │   └── db.js             ← Pool de conexiones PostgreSQL (pg.Pool). Lee DATABASE_URL
+    │                           del .env. Se importa en servicios y en init.js.
+    │
+    ├── db/
+    │   └── init.js           ← CREATE TABLE IF NOT EXISTS para todas las tablas
+    │                           (users, categories, transactions, goals, goal_allocations,
+    │                           ai_chat_history) + índices + categorías globales por defecto.
+    │                           Se ejecuta UNA vez al arrancar desde server.js.
+    │
+    ├── errors/
+    │   └── AppError.js       ← Clase AppError + subclases:
+    │                           BadRequestError (400), UnauthorizedError (401),
+    │                           ForbiddenError (403), NotFoundError (404),
+    │                           ConflictError (409), ValidationError (400 + lista errors[]).
+    │                           Los servicios lanzan estas clases; el errorHandler las captura.
+    │
+    ├── middleware/
+    │   ├── authMiddleware.js  ← protect(). Lee el header "Authorization: Bearer <token>",
+    │   │                        verifica el JWT y pone req.user = { id, email }.
+    │   │                        Todas las rutas privadas pasan por aquí.
+    │   │
+    │   ├── errorHandler.js   ← Middleware de 4 parámetros (err,req,res,next).
+    │   │                        Registrado AL FINAL de app.js. Captura cualquier error
+    │   │                        lanzado con next(err) o throw desde async handlers.
+    │   │                        Detecta errores de PG (23505, 23503), JWT, AppError, bugs.
+    │   │
+    │   ├── rateLimiter.js    ← Tres limitadores (express-rate-limit):
+    │   │                        · apiLimiter   → 200 req / 15 min por IP (toda la API)
+    │   │                        · authLimiter  → 10 req  / 15 min por IP (login/register)
+    │   │                        · aiLimiter    → 30 req  / hora por IP  (POST /api/ai/chat)
+    │   │
+    │   └── validate.js       ← Motor de validación declarativa. Exporta validate(rules)
+    │                            y el objeto rules con las reglas de cada recurso.
+    │                            Uso: router.post('/', validate(rules.transaction.create), ctrl)
+    │                            Si falla → lanza ValidationError → errorHandler responde 400.
+    │
+    ├── routes/               ← Solo declaran URLs, métodos, middleware y qué controller llaman.
+    │   │                        No contienen lógica de negocio.
+    │   ├── authRoutes.js      POST /api/auth/register  (authLimiter + validate)
+    │   │                      POST /api/auth/login     (authLimiter + validate)
+    │   │                      GET  /api/auth/me        (protect)
+    │   │
+    │   ├── transactionRoutes.js  GET|POST /api/transactions
+    │   │                          GET|PUT|DELETE /api/transactions/:id
+    │   │                          (protect + validate en POST y PUT)
+    │   │
+    │   ├── categoryRoutes.js     GET|POST /api/categories
+    │   │                          GET|PUT|DELETE /api/categories/:id
+    │   │
+    │   ├── goalRoutes.js         GET|POST /api/goals
+    │   │                          GET|PUT|DELETE /api/goals/:id
+    │   │                          POST /api/goals/:id/allocations
+    │   │
+    │   ├── summaryRoutes.js      GET /api/summary
+    │   │                          GET /api/summary/goals
+    │   │
+    │   └── aiRoutes.js           POST /api/ai/chat    (aiLimiter + validate)
+    │                              GET  /api/ai/history
+    │                              DELETE /api/ai/history
+    │
+    ├── controllers/          ← Reciben req, llaman al servicio, devuelven res.json().
+    │   │                        Máximo ~15 líneas por función. Errores van con next(err).
+    │   ├── authController.js      register / login / getMe
+    │   ├── transactionController.js
+    │   ├── categoryController.js
+    │   ├── goalController.js
+    │   ├── summaryController.js   (sin servicio propio — queries simples directas al pool)
+    │   └── aiController.js        chat / getChatHistory / clearChatHistory
+    │
+    ├── services/             ← Toda la lógica de negocio y las queries SQL.
+    │   │                        Los controllers NO tocan el pool directamente (excepto summary).
+    │   │                        Los servicios lanzan AppError cuando algo sale mal.
+    │   ├── transactionService.js  list / getById / create / update / delete
+    │   ├── categoryService.js     list / getById / create / update / delete
+    │   ├── goalService.js         list / getById / create / update / delete / allocate
+    │   └── aiService.js           chat / getHistory / clearHistory
+    │                              + loadFinancialContext() + buildSystemPrompt()
+    │                              + toolExecutors { create_transaction, query_stats,
+    │                                                list_transactions, goals_status }
+    │                              + callAnthropic() (wrapper fetch a Anthropic API)
+    │
+    └── utils/
+        ├── hash.js            ← hashPassword(plain) / comparePassword(plain, hash)  [bcryptjs]
+        └── jwt.js             ← generateToken(payload) / verifyToken(token)          [jsonwebtoken]
+
+
+══════════════════════════════════════════════════════════════════════
+FLUJO DE UNA PETICIÓN (ejemplo: POST /api/transactions)
+══════════════════════════════════════════════════════════════════════
+
+  Request
+    │
+    ▼
+  app.js          → apiLimiter (¿demasiadas peticiones? → 429)
+    │
+    ▼
+  transactionRoutes.js
+    │
+    ├─ protect()           → verifica JWT → pone req.user
+    ├─ validate(rules)     → valida body → si falla: ValidationError → errorHandler
+    │
+    ▼
+  transactionController.createTransaction()
+    │   extrae req.body, llama al servicio
+    ▼
+  transactionService.create()
+    │   verifica categoría, hace INSERT en PostgreSQL
+    │   si algo falla: lanza NotFoundError / AppError
+    ▼
+  controller        → res.status(201).json(...)
+    │
+    │   (si hubo throw en cualquier punto)
+    ▼
+  errorHandler.js   → decide statusCode y formato de respuesta JSON
+
+
+══════════════════════════════════════════════════════════════════════
+BASE DE DATOS — Tablas
+══════════════════════════════════════════════════════════════════════
+
+  users               id, name, email, password_hash, created_at
+  categories          id, name, type(income|expense), user_id(NULL=global), created_at, updated_at
+  transactions        id, user_id, category_id, type, amount, description, date, created_at, updated_at
+  goals               id, user_id, title, target_amount, current_amount, is_completed, completed_at, ...
+  goal_allocations    id, user_id, goal_id, amount, created_at, updated_at
+  ai_chat_history     id, user_id, role(user|assistant), content, created_at
+
+
+══════════════════════════════════════════════════════════════════════
+VARIABLES DE ENTORNO REQUERIDAS (.env)
+══════════════════════════════════════════════════════════════════════
+
+  DATABASE_URL        postgresql://user:pass@localhost:5432/financeapp
+  JWT_SECRET          string largo y aleatorio
+  JWT_EXPIRES_IN      7d
+  ANTHROPIC_API_KEY   sk-ant-...
+  PORT                3000
+  NODE_ENV            development | production
+  ALLOWED_ORIGINS     https://tudominio.com  (en prod; en dev puede ser *)
+
+
+══════════════════════════════════════════════════════════════════════
+REGLA DE ORO — ¿Dónde va cada cosa nueva?
+══════════════════════════════════════════════════════════════════════
+
+  Nuevo endpoint         → routes/ + controllers/ + (si tiene lógica) services/
+  Nueva validación       → middleware/validate.js en el objeto rules{}
+  Nuevo error tipado     → errors/AppError.js (subclase de AppError)
+  Nueva tabla            → db/init.js (CREATE TABLE IF NOT EXISTS)
+  Nueva herramienta IA   → services/aiService.js en TOOLS[] y toolExecutors{}
+  Nueva página frontend  → public/*.html + lógica en public/js/*.js

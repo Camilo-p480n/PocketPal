@@ -44,7 +44,7 @@ app.use("/api/auth/register", authLimiter);
 
 // ─── Static frontend ──────────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, "..", "frontend")));
-
+app.use(express.static("frontend"));
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get("/health", (req, res) =>
   res.json({

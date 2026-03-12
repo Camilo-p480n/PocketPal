@@ -43,7 +43,7 @@ app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/register", authLimiter);
 
 // ─── Static frontend ──────────────────────────────────────────────────────────
-app.use(express.static(path.join(__dirname, "..", "frontend")));
+app.use(express.static(path.join(__dirname, "..", "..", "frontend")));
 app.use(express.static("frontend"));
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get("/health", (req, res) =>
@@ -65,7 +65,7 @@ app.use("/api/gmail", gmailRoutes);
 
 // ─── SPA fallback ─────────────────────────────────────────────────────────────
 app.get(/^(?!\/api).*/, (req, res) => {
-  res.sendFile(path.join(__dirname, "..", "frontend", "index.html"));
+  res.sendFile(path.join(__dirname, "..", "..", "frontend", "index.html"));
 });
 
 // ─── 404 para rutas API no encontradas ────────────────────────────────────────
